@@ -11,12 +11,13 @@ TEST_SRC_FILES=$(wildcard $(TEST_DIR)src/*.c)
 TEST_SRC_FILES+=$(wildcard $(TEST_DIR)*.c)
 
 SRC_DIR=src/
+SRC_INCLUDE=$(SRC_DIR)/include
 SRC_FILES=$(wildcard $(SRC_DIR)*.c)
 TARGET_FILES=$(patsubst %.c,%.o,$(SRC_FILES))
 BUILD_DIR=build
 TARGET=mydatabase
 
-INC_DIRS=-I$(SRC_DIR) -I$(TEST_DIR)src
+INC_DIRS=-I$(SRC_DIR) -I$(TEST_DIR)src -I$(SRC_INCLUDE)
 
 all: clean_obj build gen_test c_test run
 
@@ -32,15 +33,16 @@ c_test:
 		-o $(TEST_BUILD_DIR)$(TEST_TARGET)
 
 build: build_dir target
-	ar rcs $(BUILD_DIR)/lib$(TARGET).a $(TARGET_FILES) 
+	ar rcs $(BUILD_DIR)/lib$(TARGET).a $(TARGET_FILES)
 	$(C_COMPILER) -shared -o $(BUILD_DIR)/lib$(TARGET).so $(TARGET_FILES)
+	@cp $(SRC_INCLUDE)/*.h $(BUILD_DIR)/include/
 
-target: CFLAGS+=-fPIC 
+target: CFLAGS+=-fPIC
 target: $(TARGET_FILES)
 
 %.o: %.c
-	@$(C_COMPILER) $(CFLAGS) $(INC_DIRS) -c -o $@ $? 
-	
+	@$(C_COMPILER) $(CFLAGS) $(INC_DIRS) -c -o $@ $?
+
 install:
 	@echo copying files to $(PREFIX)
 	@cp $(BUILD_DIR)/* $(PREFIX)
@@ -56,6 +58,7 @@ vrun:
 
 build_dir:
 	@mkdir -p $(BUILD_DIR)
+	@mkdir -p $(BUILD_DIR)/include
 
 gen_test:
 	@rm -f $(TEST_DIR)AllTests.c
@@ -67,8 +70,8 @@ clean_obj:
 clean: clean_obj
 	@rm -f cscope.* tags
 	@rm -f src/*.o
-	@rm -f build/*
-	
+	@rm -rf build/*
+
 tags:
 	@rm -f cscope.* tags
 	@find . -name "*.[hc]" > cscope.files
